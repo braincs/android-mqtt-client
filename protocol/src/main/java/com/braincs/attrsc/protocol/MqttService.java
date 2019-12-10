@@ -55,7 +55,7 @@ public class MqttService extends Service {
     private static String PRODUCT_NAME = "m5";//device /product
 //    private static String DEVICE_TYPE = "${DEVICE_TYPE}";//device /product
 //    private static String PRODUCT_NAME = "${PRODUCT_NAME}";//device /product
-    private static String IP_PREFIX = "panel/m5/";//device /product
+    private static String TOPIC_PREFIX = "panel/m5/";//device /product
     private static volatile boolean isChecking = false;
     private static final Object sync = new Object();
 
@@ -134,7 +134,7 @@ public class MqttService extends Service {
      */
     public static void startService(Context mContext, String clientID) {
         mContext.startService(new Intent(mContext, MqttService.class));
-        CLIENTID = "M_" + clientID;
+        CLIENTID = clientID;
     }
 
     /**
@@ -152,7 +152,7 @@ public class MqttService extends Service {
         mContext.startService(new Intent(mContext, MqttService.class));
 //        char prefix = PRODUCT_NAME.charAt(0);
 //        CLIENTID = clientID;
-        CLIENTID = "M_" + clientID;
+        CLIENTID = clientID;
         observerStart = startObserver;
         observerAddGroup = addGroupObserver;
         observerAddFace = addFaceObserver;
@@ -168,7 +168,7 @@ public class MqttService extends Service {
      */
     public static void startService(Context mContext, Config config) {
 
-        CLIENTID = "M_"+ config.getClientID();
+        CLIENTID = config.getClientID();
         HOST = config.getServerUrl();
         PASSWORD = config.getPASSWORD();
         USERNAME = config.getUSERNAME();
@@ -289,22 +289,22 @@ public class MqttService extends Service {
     }
 
     private void initTopicLastWill() {
-        IP_PREFIX = DEVICE_TYPE + "/"+ PRODUCT_NAME +"/";
-        Log.d(TAG, "============IP: " + IP_PREFIX);
-        TOPIC_PANEL_SATAUS = IP_PREFIX + CLIENTID + "/out/start";
-        TOPIC_PANEL_CHECK = IP_PREFIX + CLIENTID + "/in/check";
-        LAST_WILL_PANEL_SATAUS = IP_PREFIX + CLIENTID + "/out/stop";//status 遗言
-        LAST_WILL_PANEL_CHECK = IP_PREFIX + CLIENTID + "/in/disconnect";//check 遗言
-        TOPIC_PANEL_RECOGNIZE = IP_PREFIX + CLIENTID + "/in/recognize";//recognize 返回主题
-        TOPIC_PANEL_ADD_GROUP = IP_PREFIX + CLIENTID + "/out/add_group";//add_group 主题
-        TOPIC_PANEL_ADD_GROUP_RES = IP_PREFIX + CLIENTID + "/in/add_group/";//add_group 返回主题
-        TOPIC_PANEL_DEL_GROUP = IP_PREFIX + CLIENTID + "/out/del_group/+";//del_group 主题
-        TOPIC_PANEL_DEL_GROUP_RES = IP_PREFIX + CLIENTID + "/in/del_group/";//del_group 返回主题
-        TOPIC_PANEL_ADD_FACE = IP_PREFIX + CLIENTID + "/out/add_face";//add_face 主题
-        TOPIC_PANEL_DEL_FACE = IP_PREFIX + CLIENTID + "/out/del_face/+/+";//del_face 主题
-        TOPIC_PANEL_DEL_FACE_RES = IP_PREFIX + CLIENTID + "/in/del_face/";//del_face 返回主题
-        TOPIC_PANEL_SNAPSHOT = IP_PREFIX + CLIENTID + "/out/snapshot";//snapshot 主题
-        TOPIC_PANEL_SNAPSHOT_RES = IP_PREFIX + CLIENTID + "/in/snapshot";//snapshot result 主题
+        TOPIC_PREFIX = DEVICE_TYPE + "/"+ PRODUCT_NAME +"/";
+        Log.d(TAG, "topic prefix: " + TOPIC_PREFIX);
+        TOPIC_PANEL_SATAUS = TOPIC_PREFIX + CLIENTID + "/out/start";
+        TOPIC_PANEL_CHECK = TOPIC_PREFIX + CLIENTID + "/in/check";
+        LAST_WILL_PANEL_SATAUS = TOPIC_PREFIX + CLIENTID + "/out/stop";//status 遗言
+        LAST_WILL_PANEL_CHECK = TOPIC_PREFIX + CLIENTID + "/in/disconnect";//check 遗言
+        TOPIC_PANEL_RECOGNIZE = TOPIC_PREFIX + CLIENTID + "/in/recognize";//recognize 返回主题
+        TOPIC_PANEL_ADD_GROUP = TOPIC_PREFIX + CLIENTID + "/out/add_group";//add_group 主题
+        TOPIC_PANEL_ADD_GROUP_RES = TOPIC_PREFIX + CLIENTID + "/in/add_group/";//add_group 返回主题
+        TOPIC_PANEL_DEL_GROUP = TOPIC_PREFIX + CLIENTID + "/out/del_group/+";//del_group 主题
+        TOPIC_PANEL_DEL_GROUP_RES = TOPIC_PREFIX + CLIENTID + "/in/del_group/";//del_group 返回主题
+        TOPIC_PANEL_ADD_FACE = TOPIC_PREFIX + CLIENTID + "/out/add_face";//add_face 主题
+        TOPIC_PANEL_DEL_FACE = TOPIC_PREFIX + CLIENTID + "/out/del_face/+/+";//del_face 主题
+        TOPIC_PANEL_DEL_FACE_RES = TOPIC_PREFIX + CLIENTID + "/in/del_face/";//del_face 返回主题
+        TOPIC_PANEL_SNAPSHOT = TOPIC_PREFIX + CLIENTID + "/out/snapshot";//snapshot 主题
+        TOPIC_PANEL_SNAPSHOT_RES = TOPIC_PREFIX + CLIENTID + "/in/snapshot";//snapshot result 主题
     }
 
     /**

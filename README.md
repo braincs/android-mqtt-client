@@ -45,6 +45,8 @@ android中使用protobuf，过程是这样的：
 
 要通信，先协议。通讯前先定义好通讯协议。好比需要沟通前，我们必须先商量好说哪国的语言是一样的。
 
+参考tag：v1.0
+
 ### 简单协议
 
 实现消息回环
@@ -77,7 +79,15 @@ android中使用protobuf，过程是这样的：
 
 ### 创建客户端
 
+使用Service包装客户端`MqttAndroidClient`
+
 依赖Paho库，创建Paho 的 `MqttAndroidClient`，这是所有通讯的核心：
+
+Paho `MqttAndroidClient` 构造方法如下：
+
+- 传入context：Android上下文
+- 传入 serverURI： **broker地址** `IP地址+端口号` 
+- 传入clientID：需要具有唯一标识，这里使用 `前缀+UUID`的方式
 
 ```java
 package org.eclipse.paho.android.service;
@@ -100,8 +110,7 @@ package org.eclipse.paho.android.service;
 	}
 ```
 
-- 传入 serverURI： **broker地址** `IP地址+端口号` 
-- 传入clientID：需要具有唯一标识，这里使用 `前缀+UUID`的方式
+初始化客户端，在Service的 `onCreate()` 调用
 
 ```java
 private void init() {
@@ -400,6 +409,8 @@ dependencies {
 
 #### 搭建.proto文件生成java类的环境
 
+[参考：https://www.jianshu.com/p/1b78eb36ded7](https://www.jianshu.com/p/1b78eb36ded7)
+
 1、 在 `src/main` 下创建protobuf文件夹创建`mqtt.proto`文件
 
 依据协议，映射到proto文件 
@@ -576,4 +587,238 @@ protobuf {
 
 - 安装proto支持插件，Settings-->Plugins-->搜索protobuf-->找到Protobuf Support点击安装
 - 重启as此时porto文件会有一个彩环，并且编写proto文件时也会有相应的提示
+
+#### 加入 `Rxjava` 承接Mqtt消息
+
+Android内部使用Rxjava进行消息通讯，由于篇幅原因，在这里不在赘述 `Rxjava`的具体实现
+
+以启动消息为例：
+
+1、创建ObservableQueue 消息队列，用于MqttMessage的队列
+
+```java
+ObservableOnSubscribe<MqttMessage> messageQueueObservable = new ObservableOnSubscribe<MqttMessage>() {
+            @Override
+            public void subscribe(ObservableEmitter<MqttMessage> emitter) throws Exception {
+                msqStartEmitter = emitter;
+            }
+        };
+```
+
+2、创建Observable
+
+```java
+Observable<Protocol.Start> msqStartObservable = Observable.create(messageQueueObservable)
+                .map(mqttStartFilter)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io());
+```
+
+3、关联对应的Observer
+
+```java
+if (observerStart != null)
+            msqStartObservable.subscribe(observerStart);
+```
+
+4、创建消息转换器mqttStartFilter
+
+Observable提供map功能，能自定义将消息转换成protobuf包装的消息体
+
+```java
+private static Function<MqttMessage, Protocol.Start> mqttStartFilter = new Function<MqttMessage, Protocol.Start>() {
+
+        @Override
+        public Protocol.Start apply(MqttMessage mqttMessage) throws Exception {
+            return Protocol.Start.parseFrom(mqttMessage.getPayload());
+        }
+    };
+```
+
+5、关联mqtt消息与rxjava 消息
+
+初始化时候，设置了mqtt消息回调
+
+```java
+private void init(){
+	//...
+	mqttAndroidClient.setCallback(mqttCallback); //设置监听订阅消息的回调
+	//...
+}
+```
+
+接受mqtt消息，并通过`msqStartEmitter.onNext(message);`将消息传入`rxjava` 队列
+
+```java
+    private MqttCallback mqttCallback = new MqttCallback() {
+
+        @Override
+        public void messageArrived(String topic, MqttMessage message) throws Exception {
+            Log.d(TAG, "》》》》》》》》》》》" + topic);
+            Log.i(TAG, "收到消息： " + new String(message.getPayload()));
+            //...
+          
+            if (topic.equals(TOPIC_PANEL_SATAUS)) {
+                msqStartEmitter.onNext(message);
+            }
+            //...
+        }
+        
+        @Override
+        public void deliveryComplete(IMqttDeliveryToken arg0) {
+
+        }
+
+        @Override
+        public void connectionLost(Throwable arg0) {
+            Log.i(TAG, "连接断开 ");
+//            doClientConnection();//连接断开，重连
+        }
+    };
+```
+
+### 创建 Activity 使用rxjava与底层 MqttService进行通信
+
+1、在 `onCreate()` 中启动Service，并传入rxjava的 Observer
+
+```java
+		@Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_protocal);
+
+        mView = this;
+        m5IsOpen = false;
+        initView();
+        initData();
+
+        getPermissions();
+        Config config = new Config.Builder().setServerUrl(HOST)
+                .setClientID(clientID)
+                .setStartObserver(observerStart)
+                .setSnapShotObserver(observerSnapshot)
+                .setAddGroupObserver(observerAddGroup)
+                .setAddFaceObserver(observerAddFace)
+                .setDelGroupObserver(observerDelGroup)
+                .setDelFaceObserver(observerDelFace)
+                .create();
+        MqttService.startService(this, config);
+    }
+```
+
+2、实现Observer，监听Mqtt消息 [Client-Sub]
+
+以打开相机消息为例：
+
+```java
+private Observer<Protocol.Start> observerStart = new Observer<Protocol.Start>() {
+
+        @Override
+        public void onSubscribe(Disposable d) {
+            disposerStart = d;
+        }
+
+        @Override
+        public void onNext(Protocol.Start start) {
+            boolean statusIsOpen = start.getIsOpen();
+            int statusCheckInterval = start.getHealthCheckInterval();
+            Protocol.Start.Mode statusMode = start.getMode();
+
+            Log.d(TAG, start.toString());
+            setReceiveMessage("Receive start request\n是否打开相机：" + statusIsOpen + "，相机检测周期：" + statusCheckInterval + "相机的模式：" + statusMode.toString());
+
+            if (statusIsOpen && !m5IsOpen) {
+                m5IsOpen = true;
+                Log.d(TAG, "是否打开相机：" + statusIsOpen + "，相机检测周期：" + statusCheckInterval);
+                Log.d(TAG, "相机的模式：" + statusMode.toString());
+//                MockM5Activity.start(ProtocalActivity.this);
+                setStatusMessage("Running");
+                MqttService.startChecking(statusCheckInterval, "meg-v1", "meg-v2", "192.168.1.10");
+                setSendMessage("Send check message every: " + statusCheckInterval + " s");
+
+            } else if (!statusIsOpen && m5IsOpen) {
+                m5IsOpen = false;
+                Log.d(TAG, "是否打开相机：" + statusIsOpen + "，相机检测周期：" + statusCheckInterval);
+                Log.d(TAG, "相机的模式：" + statusMode.toString());
+//                MockM5Activity.close();
+                setStatusMessage("Pause");
+
+                MqttService.stopChecking();
+                setSendMessage("Send stop checking");
+
+            }
+        }
+
+        @Override
+        public void onError(Throwable e) {
+
+        }
+
+        @Override
+        public void onComplete() {
+
+        }
+    };
+```
+
+**注意：**在Activity退出时候，需要释放对应的disposer，否则会内存泄漏
+
+3、实现pub消息 [Client-Pub]
+
+```java
+public void onClickSnapshot(View view) {
+        //test snapshot response
+        Protocol.SnapShot.Builder builder = Protocol.SnapShot.newBuilder();
+        Protocol.SnapShot snapShot = builder.setImage(ByteString.copyFrom(data))
+                .build();
+        Log.d(TAG, "pub an snapshot");
+        MqttService.responseSnapshot(snapShot);
+    }
+```
+
+## 与服务端联调
+
+在pc端启动 springboot工程，使用以下curl命令进行调试
+
+**流程：**使用curl命令，触发服务端的pub消息，客户端接收sub消息，并返回response。
+
+
+
+1、启动相机
+
+```bash
+❯ curl -X POST "http://127.0.0.1:8080/start" -d "modeStr=recognize&health_check_interval=20"
+```
+
+2、添加组
+
+组名：test1
+
+阈值：92
+
+top值：1 
+
+```bash
+❯ curl -XPOST "http://127.0.0.1:8080/group/add?url=mqtt://admin:admin@panel/m5/12345&group_name=test1&threshold=92.&top=1"
+```
+
+3、向组中添加人脸
+
+组名：test1
+
+cert_no：3333333
+
+image_url：图片地址
+
+**注意：** image_url 需填写本机的ip地址，确保Client和Server都在一个局域网内
+
+```bash
+❯ curl -XPOST "http://127.0.0.1:8080/face/add?url=mqtt://admin:admin@panel/m5/12345&group_name=test1&cert_no=3333333&name=xxx&image_url=http://10.156.2.75:8080/static/test.png"
+```
+
+效果图
+
+![demo-mqtt](images/demo-mqtt.png)
+
+工程开源地址 [github](https://github.com/braincs/android-mqtt-client) 欢迎star，一起探讨，提issue，等等等~
 
