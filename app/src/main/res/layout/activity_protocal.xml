@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/tvContent"
+        android:layout_width="0dp"
+        android:layout_weight="4"
+        android:layout_height="match_parent"
+        android:text=""
+        android:scrollbars = "vertical"
+        android:background="@android:color/holo_orange_light"/>
+
+
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="6"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:background="@android:color/holo_green_light">
+
+            <ListView
+                android:id="@+id/group_list"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:background="@android:color/white"
+                android:layout_weight="1"
+                android:layout_margin="5dp">
+            </ListView>
+            <!--<TextView-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="0dp"-->
+                <!--android:layout_weight="1"-->
+                <!--android:text="Add Face: "-->
+                <!--android:id="@+id/tvFaceName"/>-->
+            <ImageView
+                android:layout_marginEnd="5dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="5"
+                android:background="@android:color/white"
+                android:id="@+id/ivFace"
+                android:padding="8dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@android:color/holo_blue_light">
+            <Button
+                android:onClick="onClickTestPub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Test pub"/>
+
+            <Button
+                android:onClick="onClickRecognize"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pub recognize"/>
+
+            <Button
+                android:onClick="onClickDelGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Del group"/>
+            <Button
+                android:onClick="onClickDelFace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Del face"/>
+            <Button
+                android:onClick="onClickSnapshot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pub snapshot"/>
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+
+
+
+</LinearLayout>
