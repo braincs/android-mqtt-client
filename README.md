@@ -1,5 +1,11 @@
   # Android端基于Mqtt协议数据传输
 
+architecture：
+
+![Mqtt-client-server-arch.jpg](images/Mqtt-client-server-arch.jpg)
+
+server端参考：[SpringBoot 集成Mqtt，protobuf服务端搭建](https://www.jianshu.com/p/e21caf8338b8)
+
 ## 关于Mqtt
 
 MQTT是一个机器对机器(M2M)/“**物联网**”连接协议。它被设计为一种非常**轻量级**的**发布/订阅消息传输**。它适用于需要少量代码占用和/或网络带宽昂贵的远程位置的连接。
