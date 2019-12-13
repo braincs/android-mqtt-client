@@ -421,6 +421,8 @@ dependencies {
 
 依据协议，映射到proto文件 
 
+![proto-gen.png](images/proto-gen.png)
+
 ```protobuf
 syntax = "proto3";
 option java_package = "com.braincs.attrsc.protocol.protobuf";
